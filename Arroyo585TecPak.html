@@ -411,6 +411,7 @@
                 writer = port.writable.getWriter();
                 reader = port.readable.getReader();
                 appendToLog(`${getTimestamp()}: Connected to new port.`);
+                sendCommand('*IDN?', true); // Automatically query ID after connect
             } catch (error) {
                 appendToLog(`${getTimestamp()}: Error connecting: ${error.message}`);
             }
