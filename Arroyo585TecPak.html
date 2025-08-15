@@ -330,6 +330,36 @@
         document.getElementById('write').addEventListener('click', () => {
             sendCommand(document.getElementById('command').value, false);
         });
-    </script>
+    
+// Log available serial ports on page load/refresh
+window.addEventListener('load', async () => {
+    try {
+        portsList = await navigator.serial.getPorts();
+        if (!portsList || portsList.length === 0) {
+            appendToLog(`${getTimestamp()}: No serial ports available (getPorts).`);
+            appendToLog(`${getTimestamp()}: Note: Browsers only list ports you've previously granted access to.`);
+        } else {
+            appendToLog(`${getTimestamp()}: Found ${portsList.length} serial port(s) via getPorts.`);
+            for (let i = 0; i < portsList.length; i++) {
+                const p = portsList[i];
+                let vid = 'N/A', pid = 'N/A';
+                try {
+                    const info = (typeof p.getInfo === 'function') ? p.getInfo() : {};
+                    if (info && typeof info.usbVendorId !== 'undefined') {
+                        vid = '0x' + info.usbVendorId.toString(16).toUpperCase();
+                    }
+                    if (info && typeof info.usbProductId !== 'undefined') {
+                        pid = '0x' + info.usbProductId.toString(16).toUpperCase();
+                    }
+                } catch (_) {}
+                appendToLog(`${getTimestamp()}: Port ${i + 1}: usbVendorId=${vid}, usbProductId=${pid}`);
+            }
+        }
+    } catch (e) {
+        appendToLog(`${getTimestamp()}: Error listing serial ports: ${e.message}`);
+    }
+});
+
+</script>
 </body>
 </html>
