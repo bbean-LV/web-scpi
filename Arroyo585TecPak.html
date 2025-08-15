@@ -5,213 +5,360 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TEC Pak 585 Serial Tester</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        #response { 
-            margin-top: 20px; 
-            white-space: pre-wrap; 
-            max-height: 400px; 
-            overflow-y: auto; 
-            border: 1px solid #ccc; 
-            padding: 10px; 
-            font-family: monospace;
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --secondary-color: #6c757d;
+            --secondary-hover: #5a6268;
+            --success-color: #28a745;
+            --success-hover: #218838;
+            --light-gray: #f0f2f5;
+            --border-color: #ccc;
+            --text-color: #333;
+            --white: #ffffff;
+            --header-color: #1a2a4c;
+            --shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .config-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-        .config-item { display: flex; flex-direction: column; align-items: center; }
-        label { margin-bottom: 5px; font-size: 14px; }
-        select, input { width: 100px; }
-        #command { width: 300px; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2em;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: var(--white);
+            padding: 2.5em;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            max-width: 900px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        h1 {
+            color: var(--header-color);
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 0.5em;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+
+        h2 {
+            color: var(--header-color);
+            margin-top: 1.5em;
+            font-size: 1.4em;
+        }
+
+        p {
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        section {
+            margin-bottom: 2em;
+        }
+
+        label {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 0.5em;
+            display: block;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.75em;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        button {
+            padding: 0.75em 1.5em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out;
+            color: var(--white);
+        }
+
+        button#addPort, button#query {
+            background-color: var(--primary-color);
+        }
+        button#addPort:hover, button#query:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button#write {
+            background-color: var(--success-color);
+        }
+        button#write:hover {
+            background-color: var(--success-hover);
+        }
+
+        button#disconnect {
+            background-color: var(--secondary-color);
+        }
+        button#disconnect:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        .config-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1em;
+            margin-bottom: 1.5em;
+        }
+        
+        .command-section {
+            margin-top: 1.5em;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 1em;
+        }
+
+        .command-input {
+            flex: 1 1 300px;
+        }
+
+        .command-buttons {
+            display: flex;
+            gap: 0.5em;
+        }
+        
+        #response {
+            margin-top: 2em;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1em;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
-    <h1>TEC Pak 585 Serial API Tester</h1>
-    <p>Configure the serial port settings, connect, then select or type a SCPI command, and use Query or Write.</p>
-    
-    <h2>Serial Port Configuration</h2>
-    <div class="config-row">
-        <div class="config-item">
-            <label for="addPort">Connect</label>
-            <button id="addPort">Connect</button>
-        </div>
-        <div class="config-item">
-            <label for="baud">Baud Rate</label>
-            <select id="baud">
-                <option value="9600">9600</option>
-                <option value="14400">14400</option>
-                <option value="19200">19200</option>
-                <option value="38400" selected>38400</option>
-                <option value="57600">57600</option>
-                <option value="115200">115200</option>
-            </select>
-        </div>
-        <div class="config-item">
-            <label for="databits">Data Bits</label>
-            <select id="databits">
-                <option value="7">7</option>
-                <option value="8" selected>8</option>
-            </select>
-        </div>
-        <div class="config-item">
-            <label for="stopbits">Stop Bits</label>
-            <select id="stopbits">
-                <option value="1" selected>1</option>
-                <option value="2">2</option>
-            </select>
-        </div>
-        <div class="config-item">
-            <label for="parity">Parity</label>
-            <select id="parity">
-                <option value="none" selected>none</option>
-                <option value="even">even</option>
-                <option value="odd">odd</option>
-            </select>
-        </div>
-        <div class="config-item">
-            <label for="flowcontrol">Flow Control</label>
-            <select id="flowcontrol">
-                <option value="none" selected>none</option>
-                <option value="hardware">hardware</option>
-            </select>
-        </div>
-        <div class="config-item">
-            <label for="timeout">Timeout (ms)</label>
-            <input id="timeout" type="number" value="1000" min="100">
-        </div>
+    <div class="container">
+        <h1>TEC Pak 585 Serial Tester</h1>
+        <p>Configure the serial port settings, connect, then select or type a SCPI command, and use Query or Write.</p>
+        
+        <section>
+            <h2>Serial Port Configuration</h2>
+            <div class="config-row">
+                <div class="config-item">
+                    <label for="addPort">Connect</label>
+                    <button id="addPort">Connect</button>
+                </div>
+                <div class="config-item">
+                    <label for="baud">Baud Rate</label>
+                    <select id="baud">
+                        <option value="9600">9600</option>
+                        <option value="14400">14400</option>
+                        <option value="19200">19200</option>
+                        <option value="38400" selected>38400</option>
+                        <option value="57600">57600</option>
+                        <option value="115200">115200</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label for="databits">Data Bits</label>
+                    <select id="databits">
+                        <option value="7">7</option>
+                        <option value="8" selected>8</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label for="stopbits">Stop Bits</label>
+                    <select id="stopbits">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label for="parity">Parity</label>
+                    <select id="parity">
+                        <option value="none" selected>none</option>
+                        <option value="even">even</option>
+                        <option value="odd">odd</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label for="flowcontrol">Flow Control</label>
+                    <select id="flowcontrol">
+                        <option value="none" selected>none</option>
+                        <option value="hardware">hardware</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label for="timeout">Timeout (ms)</label>
+                    <input id="timeout" type="number" value="1000" min="100">
+                </div>
+            </div>
+            <button id="disconnect">Disconnect</button>
+        </section>
+        
+        <section class="command-section">
+            <div class="command-input">
+                 <label for="command">SCPI Command:</label>
+                 <input id="command" list="commands" value="*IDN?">
+            </div>
+            <div class="command-buttons">
+                <button id="query">Query</button>
+                <button id="write">Write</button>
+            </div>
+        </section>
+        
+        <datalist id="commands">
+            <option value="*CLS"></option>
+            <option value="*ESE"></option>
+            <option value="*ESE?"></option>
+            <option value="*ESR?"></option>
+            <option value="*IDN?"></option>
+            <option value="*IST?"></option>
+            <option value="*PRE"></option>
+            <option value="*PRE?"></option>
+            <option value="*PSC"></option>
+            <option value="*PSC?"></option>
+            <option value="*RCL"></option>
+            <option value="*RST"></option>
+            <option value="*SRE"></option>
+            <option value="*SRE?"></option>
+            <option value="*STB?"></option>
+            <option value="*TST?"></option>
+            <option value="*WAI"></option>
+            <option value="BEEP"></option>
+            <option value="BEEP?"></option>
+            <option value="BRIGHT"></option>
+            <option value="BRIGHT?"></option>
+            <option value="DELAY"></option>
+            <option value="EQUIPment?"></option>
+            <option value="ERRors?"></option>
+            <option value="ERRSTR?"></option>
+            <option value="LOCAL"></option>
+            <option value="MESsage"></option>
+            <option value="MESsage?"></option>
+            <option value="ONDELAY"></option>
+            <option value="ONDELAY?"></option>
+            <option value="RADix"></option>
+            <option value="RADix?"></option>
+            <option value="REMERR"></option>
+            <option value="REMERR?"></option>
+            <option value="SCRIPT:GET"></option>
+            <option value="SCRIPT:GO"></option>
+            <option value="SCRIPT:PUT"></option>
+            <option value="TERM"></option>
+            <option value="TERM?"></option>
+            <option value="TERMINAL"></option>
+            <option value="TERMINAL?"></option>
+            <option value="TIME?"></option>
+            <option value="TIMER?"></option>
+            <option value="TEC:ANALOG:MODE"></option>
+            <option value="TEC:ANALOG:MODE?"></option>
+            <option value="TEC:ANALOG:RES"></option>
+            <option value="TEC:ANALOG:RES?"></option>
+            <option value="TEC:ANALOG:THIGH"></option>
+            <option value="TEC:ANALOG:THIGH?"></option>
+            <option value="TEC:ANALOG:TLOW"></option>
+            <option value="TEC:ANALOG:TLOW?"></option>
+            <option value="TEC:AUTOTUNE"></option>
+            <option value="TEC:AUTOTUNE?"></option>
+            <option value="TEC:AUTOTUNESTATE?"></option>
+            <option value="TEC:CABLER"></option>
+            <option value="TEC:CABLER?"></option>
+            <option value="TEC:CABLETYPE?"></option>
+            <option value="TEC:COND?"></option>
+            <option value="TEC:CONST"></option>
+            <option value="TEC:CONST?"></option>
+            <option value="TEC:DEC"></option>
+            <option value="TEC:DISplay"></option>
+            <option value="TEC:DISplay?"></option>
+            <option value="TEC:ENABle:COND"></option>
+            <option value="TEC:ENABle:COND?"></option>
+            <option value="TEC:ENABle:EVEnt"></option>
+            <option value="TEC:ENABle:EVEnt?"></option>
+            <option value="TEC:ENABle:OUTOFF"></option>
+            <option value="TEC:ENABle:OUTOFF?"></option>
+            <option value="TEC:EVEnt?"></option>
+            <option value="TEC:FAN"></option>
+            <option value="TEC:FAN?"></option>
+            <option value="TEC:GAIN"></option>
+            <option value="TEC:GAIN?"></option>
+            <option value="TEC:HEATCOOL"></option>
+            <option value="TEC:HEATCOOL?"></option>
+            <option value="TEC:INC"></option>
+            <option value="TEC:INVERTITE"></option>
+            <option value="TEC:INVERTITE?"></option>
+            <option value="TEC:ITE"></option>
+            <option value="TEC:ITE?"></option>
+            <option value="TEC:LIMit:ITE"></option>
+            <option value="TEC:LIMit:ITE?"></option>
+            <option value="TEC:LIMit:RHI"></option>
+            <option value="TEC:LIMit:RHI?"></option>
+            <option value="TEC:LIMit:RLO"></option>
+            <option value="TEC:LIMit:RLO?"></option>
+            <option value="TEC:LIMit:THI"></option>
+            <option value="TEC:LIMit:THI?"></option>
+            <option value="TEC:LIMit:TLO"></option>
+            <option value="TEC:LIMit:TLO?"></option>
+            <option value="TEC:MODE:ITE"></option>
+            <option value="TEC:MODE:R"></option>
+            <option value="TEC:MODE:T"></option>
+            <option value="TEC:MODE?"></option>
+            <option value="TEC:OUTput"></option>
+            <option value="TEC:OUTput?"></option>
+            <option value="TEC:PID"></option>
+            <option value="TEC:PID?"></option>
+            <option value="TEC:R"></option>
+            <option value="TEC:R?"></option>
+            <option value="TEC:SENsor"></option>
+            <option value="TEC:SENsor?"></option>
+            <option value="TEC:SET:ITE?"></option>
+            <option value="TEC:SET:R?"></option>
+            <option value="TEC:SET:T?"></option>
+            <option value="TEC:STB?"></option>
+            <option value="TEC:STEP"></option>
+            <option value="TEC:STEP?"></option>
+            <option value="TEC:T"></option>
+            <option value="TEC:T?"></option>
+            <option value="TEC:TOLerance"></option>
+            <option value="TEC:TOLerance?"></option>
+            <option value="TEC:TRATE"></option>
+            <option value="TEC:TRATE?"></option>
+            <option value="TEC:USERCAL:EDIT"></option>
+            <option value="TEC:USERCAL:EDIT?"></option>
+            <option value="TEC:USERCAL:GET?"></option>
+            <option value="TEC:USERCAL:PUT"></option>
+            <option value="TEC:USERCAL:RESET"></option>
+            <option value="TEC:V?"></option>
+        </datalist>
+
+        <div id="response"></div>
     </div>
-    
-    <button id="disconnect">Disconnect</button>
-    <br><br>
-    
-    <label for="command">SCPI Command:</label>
-    <input id="command" list="commands" value="*IDN?" style="width: 300px;">
-    
-    <datalist id="commands">
-        <option value="*CLS"></option>
-        <option value="*ESE"></option>
-        <option value="*ESE?"></option>
-        <option value="*ESR?"></option>
-        <option value="*IDN?"></option>
-        <option value="*IST?"></option>
-        <option value="*PRE"></option>
-        <option value="*PRE?"></option>
-        <option value="*PSC"></option>
-        <option value="*PSC?"></option>
-        <option value="*RCL"></option>
-        <option value="*RST"></option>
-        <option value="*SRE"></option>
-        <option value="*SRE?"></option>
-        <option value="*STB?"></option>
-        <option value="*TST?"></option>
-        <option value="*WAI"></option>
-        <option value="BEEP"></option>
-        <option value="BEEP?"></option>
-        <option value="BRIGHT"></option>
-        <option value="BRIGHT?"></option>
-        <option value="DELAY"></option>
-        <option value="EQUIPment?"></option>
-        <option value="ERRors?"></option>
-        <option value="ERRSTR?"></option>
-        <option value="LOCAL"></option>
-        <option value="MESsage"></option>
-        <option value="MESsage?"></option>
-        <option value="ONDELAY"></option>
-        <option value="ONDELAY?"></option>
-        <option value="RADix"></option>
-        <option value="RADix?"></option>
-        <option value="REMERR"></option>
-        <option value="REMERR?"></option>
-        <option value="SCRIPT:GET"></option>
-        <option value="SCRIPT:GO"></option>
-        <option value="SCRIPT:PUT"></option>
-        <option value="TERM"></option>
-        <option value="TERM?"></option>
-        <option value="TERMINAL"></option>
-        <option value="TERMINAL?"></option>
-        <option value="TIME?"></option>
-        <option value="TIMER?"></option>
-        <option value="TEC:ANALOG:MODE"></option>
-        <option value="TEC:ANALOG:MODE?"></option>
-        <option value="TEC:ANALOG:RES"></option>
-        <option value="TEC:ANALOG:RES?"></option>
-        <option value="TEC:ANALOG:THIGH"></option>
-        <option value="TEC:ANALOG:THIGH?"></option>
-        <option value="TEC:ANALOG:TLOW"></option>
-        <option value="TEC:ANALOG:TLOW?"></option>
-        <option value="TEC:AUTOTUNE"></option>
-        <option value="TEC:AUTOTUNE?"></option>
-        <option value="TEC:AUTOTUNESTATE?"></option>
-        <option value="TEC:CABLER"></option>
-        <option value="TEC:CABLER?"></option>
-        <option value="TEC:CABLETYPE?"></option>
-        <option value="TEC:COND?"></option>
-        <option value="TEC:CONST"></option>
-        <option value="TEC:CONST?"></option>
-        <option value="TEC:DEC"></option>
-        <option value="TEC:DISplay"></option>
-        <option value="TEC:DISplay?"></option>
-        <option value="TEC:ENABle:COND"></option>
-        <option value="TEC:ENABle:COND?"></option>
-        <option value="TEC:ENABle:EVEnt"></option>
-        <option value="TEC:ENABle:EVEnt?"></option>
-        <option value="TEC:ENABle:OUTOFF"></option>
-        <option value="TEC:ENABle:OUTOFF?"></option>
-        <option value="TEC:EVEnt?"></option>
-        <option value="TEC:FAN"></option>
-        <option value="TEC:FAN?"></option>
-        <option value="TEC:GAIN"></option>
-        <option value="TEC:GAIN?"></option>
-        <option value="TEC:HEATCOOL"></option>
-        <option value="TEC:HEATCOOL?"></option>
-        <option value="TEC:INC"></option>
-        <option value="TEC:INVERTITE"></option>
-        <option value="TEC:INVERTITE?"></option>
-        <option value="TEC:ITE"></option>
-        <option value="TEC:ITE?"></option>
-        <option value="TEC:LIMit:ITE"></option>
-        <option value="TEC:LIMit:ITE?"></option>
-        <option value="TEC:LIMit:RHI"></option>
-        <option value="TEC:LIMit:RHI?"></option>
-        <option value="TEC:LIMit:RLO"></option>
-        <option value="TEC:LIMit:RLO?"></option>
-        <option value="TEC:LIMit:THI"></option>
-        <option value="TEC:LIMit:THI?"></option>
-        <option value="TEC:LIMit:TLO"></option>
-        <option value="TEC:LIMit:TLO?"></option>
-        <option value="TEC:MODE:ITE"></option>
-        <option value="TEC:MODE:R"></option>
-        <option value="TEC:MODE:T"></option>
-        <option value="TEC:MODE?"></option>
-        <option value="TEC:OUTput"></option>
-        <option value="TEC:OUTput?"></option>
-        <option value="TEC:PID"></option>
-        <option value="TEC:PID?"></option>
-        <option value="TEC:R"></option>
-        <option value="TEC:R?"></option>
-        <option value="TEC:SENsor"></option>
-        <option value="TEC:SENsor?"></option>
-        <option value="TEC:SET:ITE?"></option>
-        <option value="TEC:SET:R?"></option>
-        <option value="TEC:SET:T?"></option>
-        <option value="TEC:STB?"></option>
-        <option value="TEC:STEP"></option>
-        <option value="TEC:STEP?"></option>
-        <option value="TEC:T"></option>
-        <option value="TEC:T?"></option>
-        <option value="TEC:TOLerance"></option>
-        <option value="TEC:TOLerance?"></option>
-        <option value="TEC:TRATE"></option>
-        <option value="TEC:TRATE?"></option>
-        <option value="TEC:USERCAL:EDIT"></option>
-        <option value="TEC:USERCAL:EDIT?"></option>
-        <option value="TEC:USERCAL:GET?"></option>
-        <option value="TEC:USERCAL:PUT"></option>
-        <option value="TEC:USERCAL:RESET"></option>
-        <option value="TEC:V?"></option>
-    </datalist>
-    
-    <button id="query">Query (Send & Read)</button>
-    <button id="write">Write (Send Only)</button>
-    
-    <div id="response"></div>
     
     <script>
         let port;
@@ -296,7 +443,9 @@
                 await writer.write(encoder.encode(cmd + '\r\n'));
                 if (readBack) {
                     let data = '';
-                    const timeoutId = setTimeout(() => { reader.cancel(); }, timeout);
+                    const timeoutId = setTimeout(() => {
+                        if(reader) reader.cancel().catch(() => {}); 
+                    }, timeout);
                     try {
                         while (true) {
                             const { value, done } = await reader.read();
@@ -304,22 +453,19 @@
                             data += decoder.decode(value);
                             if (data.includes('\n')) break;
                         }
-                        clearTimeout(timeoutId);
-                        appendToLog(`${getTimestamp()}: Response: ${data.trim() || 'No response'}`);
                     } catch (e) {
+                        // The read was cancelled, which is expected on timeout.
+                    } finally {
                         clearTimeout(timeoutId);
-                        appendToLog(`${getTimestamp()}: Timeout or error: ${e.message}`);
+                        appendToLog(`${getTimestamp()}: Response: ${data.trim() || 'No response / Timeout'}`);
+                        reader.releaseLock();
+                        reader = port.readable.getReader();
                     }
                 } else {
                     appendToLog(`${getTimestamp()}: Command sent.`);
                 }
             } catch (error) {
                 appendToLog(`${getTimestamp()}: Error: ${error.message}`);
-            } finally {
-                if (readBack) {
-                    reader.releaseLock();
-                    reader = port.readable.getReader();
-                }
             }
         }
 
@@ -331,35 +477,33 @@
             sendCommand(document.getElementById('command').value, false);
         });
     
-// Log available serial ports on page load/refresh
-window.addEventListener('load', async () => {
-    try {
-        portsList = await navigator.serial.getPorts();
-        if (!portsList || portsList.length === 0) {
-            appendToLog(`${getTimestamp()}: No serial ports available (getPorts).`);
-            appendToLog(`${getTimestamp()}: Note: Browsers only list ports you've previously granted access to.`);
-        } else {
-            appendToLog(`${getTimestamp()}: Found ${portsList.length} serial port(s) via getPorts.`);
-            for (let i = 0; i < portsList.length; i++) {
-                const p = portsList[i];
-                let vid = 'N/A', pid = 'N/A';
-                try {
-                    const info = (typeof p.getInfo === 'function') ? p.getInfo() : {};
-                    if (info && typeof info.usbVendorId !== 'undefined') {
-                        vid = '0x' + info.usbVendorId.toString(16).toUpperCase();
+        window.addEventListener('load', async () => {
+            try {
+                portsList = await navigator.serial.getPorts();
+                if (!portsList || portsList.length === 0) {
+                    appendToLog(`${getTimestamp()}: No serial ports available (getPorts).`);
+                    appendToLog(`${getTimestamp()}: Note: Browsers only list ports you've previously granted access to.`);
+                } else {
+                    appendToLog(`${getTimestamp()}: Found ${portsList.length} serial port(s) via getPorts.`);
+                    for (let i = 0; i < portsList.length; i++) {
+                        const p = portsList[i];
+                        let vid = 'N/A', pid = 'N/A';
+                        try {
+                            const info = (typeof p.getInfo === 'function') ? p.getInfo() : {};
+                            if (info && typeof info.usbVendorId !== 'undefined') {
+                                vid = '0x' + info.usbVendorId.toString(16).toUpperCase();
+                            }
+                            if (info && typeof info.usbProductId !== 'undefined') {
+                                pid = '0x' + info.usbProductId.toString(16).toUpperCase();
+                            }
+                        } catch (_) {}
+                        appendToLog(`${getTimestamp()}: Port ${i + 1}: usbVendorId=${vid}, usbProductId=${pid}`);
                     }
-                    if (info && typeof info.usbProductId !== 'undefined') {
-                        pid = '0x' + info.usbProductId.toString(16).toUpperCase();
-                    }
-                } catch (_) {}
-                appendToLog(`${getTimestamp()}: Port ${i + 1}: usbVendorId=${vid}, usbProductId=${pid}`);
+                }
+            } catch (e) {
+                appendToLog(`${getTimestamp()}: Error listing serial ports: ${e.message}`);
             }
-        }
-    } catch (e) {
-        appendToLog(`${getTimestamp()}: Error listing serial ports: ${e.message}`);
-    }
-});
-
-</script>
+        });
+    </script>
 </body>
 </html>
